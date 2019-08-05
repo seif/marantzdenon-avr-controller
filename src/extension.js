@@ -35,6 +35,8 @@ let denonAVRindicator;
 let httpSession = new Soup.SessionAsync();
 Soup.Session.prototype.add_feature.call(httpSession, new Soup.ProxyResolverDefault());
 
+let baseUrl = "http://192.168.1.6/";
+
 // borrowed from: https://github.com/eonpatapon/gnome-shell-extensions-mediaplayer
 const SliderItem = new Lang.Class(
 {
@@ -203,7 +205,7 @@ const DenonAVRindicator = new Lang.Class(
 
     _sendCommand: function(command, arg)
     {
-        let url = 'http://192.168.1.6/MainZone/index.put.asp?cmd0=' + command + '%2F' + arg;
+        let url = baseUrl + 'MainZone/index.put.asp?cmd0=' + command + '%2F' + arg;
             
         // create an http message
         let request = Soup.Message.new('GET', url);
@@ -215,7 +217,7 @@ const DenonAVRindicator = new Lang.Class(
     {
         if (open)
         {
-            let url = 'http://192.168.1.6/goform/formMainZone_MainZoneXml.xml';
+            let url = baseUrl + 'goform/formMainZone_MainZoneXml.xml';
             let request = Soup.Message.new('GET', url);
             httpSession.queue_message(request, Lang.bind(this, this._parseResponse));
         }
