@@ -1,4 +1,3 @@
-/* -*- Mode: js2; indent-tabs-mode: nil; c-basic-offset: 4; tab-width: 4 -*-  */
 /*
  * extension.js
  * Copyright (C) 2019 Sylvain Terrien <sylvainterrien@orange.fr>
