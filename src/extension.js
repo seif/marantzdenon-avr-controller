@@ -27,7 +27,7 @@ const PopupMenu = imports.ui.popupMenu;
 const Slider = imports.ui.slider;
 
 // Other javascript files in the Denon_AVR_controler@sylter.fr directory are accesible via Extension.<file name>
-const Extension = imports.ui.extensionSystem.extensions['Denon_AVR_controler@sylter.fr'];
+const Extension = imports.misc.extensionUtils.getCurrentExtension();
 
 const IndicatorName = "DenonAVRindicator";
 
