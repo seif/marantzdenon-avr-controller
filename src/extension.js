@@ -16,6 +16,8 @@
  * with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+'use strict';
+
 const Clutter = imports.gi.Clutter;
 const St = imports.gi.St;
 const Main = imports.ui.main;
@@ -24,9 +26,12 @@ const Lang = imports.lang;
 const PanelMenu = imports.ui.panelMenu;
 const PopupMenu = imports.ui.popupMenu;
 const Slider = imports.ui.slider;
+const Gio = imports.gi.Gio;
 
-// Other javascript files in the Denon_AVR_controler@sylter.fr directory are accesible via Extension.<file name>
-const Extension = imports.misc.extensionUtils.getCurrentExtension();
+// Other javascript files in the Denon_AVR_controler@sylter.fr directory are
+// accesible via Me.<file name>
+const ExtensionUtils = imports.misc.extensionUtils;
+const Me = ExtensionUtils.getCurrentExtension();
 
 const IndicatorName = "DenonAVRindicator";
 
@@ -34,9 +39,10 @@ let denonAVRindicator;
 let httpSession = new Soup.SessionAsync();
 Soup.Session.prototype.add_feature.call(httpSession, new Soup.ProxyResolverDefault());
 
-let baseUrl = "http://192.168.1.6/";
+let baseUrl;
 
-// borrowed from: https://github.com/eonpatapon/gnome-shell-extensions-mediaplayer
+// borrowed from:
+// https://github.com/eonpatapon/gnome-shell-extensions-mediaplayer
 const SliderItem = new Lang.Class(
 {
     Name: 'SliderItem',
@@ -107,6 +113,7 @@ const VolumeSlider = new Lang.Class(
     changeIcon()
     {
         let value = this.getValue();
+        
         if (value == 0)
         {
             this.setIcon("audio-volume-muted-symbolic");
@@ -128,6 +135,7 @@ const VolumeSlider = new Lang.Class(
 
 /**
  * A simple label which only displays the given text.
+ * 
  * @type {Lang.Class}
  */
 const LabelWidget = new Lang.Class({
@@ -148,7 +156,9 @@ const LabelWidget = new Lang.Class({
 
     /**
      * Set the text for this label.
-     * @param text the new text.
+     * 
+     * @param text
+     *            the new text.
      */
     setText: function(text){
         this._label.text = text;
@@ -216,6 +226,8 @@ const DenonAVRindicator = new Lang.Class(
     {
         if (open)
         {
+            loadSettings();
+            
             let url = baseUrl + 'goform/formMainZone_MainZoneXml.xml';
             let request = Soup.Message.new('GET', url);
             httpSession.queue_message(request, Lang.bind(this, this._parseResponse));
@@ -224,7 +236,7 @@ const DenonAVRindicator = new Lang.Class(
 
     _parseResponse: function (httpSession, message)
     {
-        if (message.status_code = 200)
+        if (message.status_code == 200)
         {
             let data = message.response_body.data;
             
@@ -246,12 +258,25 @@ const DenonAVRindicator = new Lang.Class(
     stop: function()
     {
         this.menu.removeAll();
+    },
+
+    loadSettings: function()
+    {
+        let gschema = Gio.SettingsSchemaSource.new_from_directory(Me.dir.get_child('schemas').get_path(),
+                Gio.SettingsSchemaSource.get_default(), false);
+
+        this.settings = new Gio.Settings({
+            settings_schema : gschema.lookup('org.gnome.shell.extensions.denon-avr-controler', true)
+        });
+        
+        baseUrl = this.settings.get_value('avr-url').unpack();
     }
 });
 
 function enable()
-{
+{    
     denonAVRindicator = new DenonAVRindicator();
+    denonAVRindicator.loadSettings();
     Main.panel.addToStatusArea(IndicatorName, denonAVRindicator);
 }
 
