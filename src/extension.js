@@ -226,7 +226,7 @@ const DenonAVRindicator = new Lang.Class(
     {
         if (open)
         {
-            loadSettings();
+            this.loadSettings();
             
             let url = baseUrl + 'goform/formMainZone_MainZoneXml.xml';
             let request = Soup.Message.new('GET', url);
