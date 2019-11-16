@@ -1,6 +1,9 @@
-before_script:
-    - apt-get update -qq && apt-get install -qq make libglib2.0-bin zip unzip
-
 build:
-    script:
-        - make
+    stage: build
+    before_script:
+        - apt-get update -y 
+        - apt-get install -y make libglib2.0-bin zip unzip
+    script: make
+    artifacts:
+        paths: Denon_AVR_controler@sylter.fr.zip
+        expire_in: 1 day
