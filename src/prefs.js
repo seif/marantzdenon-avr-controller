@@ -51,5 +51,5 @@ function buildPrefsWidget()
 
 function init()
 {
-    // rien pour l'instant
+    // nothing to do, but this function have to exist
 }
