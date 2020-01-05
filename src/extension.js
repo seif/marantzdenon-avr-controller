@@ -142,21 +142,17 @@ class VolumeSlider extends SliderItem
  *
  * @type {Lang.Class}
  */
-const LabelWidget = new Lang.Class({
-    Name: 'LabelWidget',
-    Extends: PopupMenu.PopupBaseMenuItem,
+var LabelWidget = GObject.registerClass(
+class LabelWidget extends PopupMenu.PopupBaseMenuItem
+{
+    _init(text)
+    {
+        super._init({reactive: false});
 
-    _init: function(text) {
-        this.parent({
-            reactive: false // Can't be focused/clicked.
-        });
-
-        this._label = new St.Label({
-            text: text
-        });
+        this._label = new St.Label({text: text});
 
         this.actor.add_child(this._label);
-    },
+    }
 
     /**
      * Set the text for this label.
@@ -164,19 +160,18 @@ const LabelWidget = new Lang.Class({
      * @param text
      *            the new text.
      */
-    setText: function(text) {
+    setText(text)
+    {
         this._label.text = text;
     }
 });
 
-const DenonAVRindicator = new Lang.Class(
+var DenonAVRindicator = GObject.registerClass(
+class DenonAVRindicator extends PanelMenu.Button
 {
-    Name: IndicatorName,
-    Extends: PanelMenu.Button,
-
-    _init: function()
+    _init()
     {
-        this.parent(0.0, IndicatorName);
+        super._init(0.0, IndicatorName);
 
         this.icon = new St.Icon({icon_name: 'audio-speakers-symbolic', style_class: 'system-status-icon'});
         this.actor.add_child(this.icon);
@@ -192,9 +187,9 @@ const DenonAVRindicator = new Lang.Class(
 
         this.powerButton.connect('toggled', Lang.bind(this, this._togglePowerButton));
         this.volumeSlider.connect('notify::value', Lang.bind(this, this._changeVolume));
-    },
+    }
 
-    _togglePowerButton: function(item, state)
+    _togglePowerButton(item, state)
     {
         if (state)
         {
@@ -204,9 +199,9 @@ const DenonAVRindicator = new Lang.Class(
         {
             this._sendCommand('PutSystem_OnStandby', 'STANDBY');
         }
-    },
+    }
 
-    _changeVolume: function()
+    _changeVolume()
     {
         let volume = this.volumeSlider.getVolume().toString();
 
@@ -214,9 +209,9 @@ const DenonAVRindicator = new Lang.Class(
 
         this.volumeLabel.setText(volume);
         this.volumeSlider.changeIcon();
-    },
+    }
 
-    _sendCommand: function(command, arg)
+    _sendCommand(command, arg)
     {
         let url = baseUrl + 'MainZone/index.put.asp?cmd0=' + command + '%2F' + arg;
 
@@ -224,9 +219,9 @@ const DenonAVRindicator = new Lang.Class(
         let request = Soup.Message.new('GET', url);
         // queue the http request
         httpSession.queue_message(request, Lang.bind(this, function(httpSession, message) {}));
-    },
+    }
 
-    _updateStatus: function(menu, open)
+    _updateStatus(menu, open)
     {
         if (open)
         {
@@ -236,9 +231,9 @@ const DenonAVRindicator = new Lang.Class(
             let request = Soup.Message.new('GET', url);
             httpSession.queue_message(request, Lang.bind(this, this._parseResponse));
         }
-    },
+    }
 
-    _parseResponse:  function(httpSession, message)
+    _parseResponse(httpSession, message)
     {
         if (message.status_code == 200)
         {
@@ -257,14 +252,14 @@ const DenonAVRindicator = new Lang.Class(
             this.volumeSlider.setVolume(volume);
             this.volumeLabel.setText(this.volumeSlider.getVolume().toString());
         }
-    },
+    }
 
-    stop: function()
+    stop()
     {
         this.menu.removeAll();
-    },
+    }
 
-    loadSettings: function()
+    loadSettings()
     {
         let gschema = Gio.SettingsSchemaSource.new_from_directory(Me.dir.get_child('schemas').get_path(),
                 Gio.SettingsSchemaSource.get_default(), false);
