@@ -27,3 +27,6 @@ zip: gschemas resources sources
 
 install: zip
 	unzip -q $(UUID).zip -d ~/.local/share/gnome-shell/extensions/$(UUID)
+
+uninstall: 
+	rm -rf ~/.local/share/gnome-shell/extensions/$(UUID)
