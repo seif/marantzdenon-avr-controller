@@ -44,13 +44,13 @@ class SliderItem extends PopupMenu.PopupImageMenuItem
         super._init('', icon, params);
         this.slider = new Slider.Slider(value);
 
-        let layout = new Clutter.TableLayout();
+        let layout = new Clutter.GridLayout();
         this._box = new St.Widget({
             style_class: 'slider-item',
             layout_manager: layout
         });
 
-        layout.pack(this.slider.actor, 2, 0);
+        layout.attach(this.slider.actor, 2, 0, 1, 1);
         this.actor.add(this._box, {span: -1, expand: true});
     }
 
