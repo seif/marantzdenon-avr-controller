@@ -4,7 +4,8 @@
     "description": "Denon AVR controler",
     "version": 5,
     "shell-version": [
-        "42"
+        "42",
+        "43"
     ],
     "url": "https://framagit.org/sylter/denon-avr-controler"
 }
