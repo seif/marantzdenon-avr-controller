@@ -31,55 +31,43 @@ const Me = ExtensionUtils.getCurrentExtension();
 const IndicatorName = 'DenonAVRindicator';
 
 let denonAVRindicator;
-let httpSession = new Soup.SessionAsync();
-Soup.Session.prototype.add_feature.call(httpSession, new Soup.ProxyResolverDefault());
+let httpSession = new Soup.Session();
 
 let baseUrl;
 
 var SliderItem = GObject.registerClass(
-    class SliderItem extends PopupMenu.PopupImageMenuItem
-    {
-        _init(value, icon, params)
-        {
+    class SliderItem extends PopupMenu.PopupImageMenuItem {
+        _init(value, icon, params) {
             super._init('', icon, params);
             this.slider = new Slider.Slider(value);
             this.actor.add_child(this.slider);
         }
 
-        setValue(value)
-        {
-            if (this.slider != undefined)
-            {
+        setValue(value) {
+            if (this.slider != undefined) {
                 this.slider.value = value;
             }
         }
 
-        getValue()
-        {
-            if (this.slider != undefined)
-            {
+        getValue() {
+            if (this.slider != undefined) {
                 return this.slider._getCurrentValue();
             }
-            else
-            {
+            else {
                 return 0;
             }
         }
 
-        connect(signal, callback)
-        {
-            if (this.slider != undefined)
-            {
+        connect(signal, callback) {
+            if (this.slider != undefined) {
                 this.slider.connect(signal, callback);
             }
         }
     });
 
 var VolumeSlider = GObject.registerClass(
-    class VolumeSlider extends SliderItem
-    {
-        _init(volume, params)
-        {
+    class VolumeSlider extends SliderItem {
+        _init(volume, params) {
             super._init(0, '', params); // value MUST be specified!
 
             this._volume_min = -80;
@@ -89,41 +77,33 @@ var VolumeSlider = GObject.registerClass(
             this.setVolume(volume); // Set the real value.
         }
 
-        setVolume(volume)
-        {
+        setVolume(volume) {
             this.setValue((volume - this._volume_min) / (this._volume_max - this._volume_min));
         }
 
-        getVolume()
-        {
+        getVolume() {
             let value = this.getValue() * (this._volume_max - this._volume_min) + this._volume_min;
             let volume = Math.floor(value);
-            if (value - volume >= 0.5)
-            {
+            if (value - volume >= 0.5) {
                 volume += 0.5;
             }
 
             return volume;
         }
 
-        changeIcon()
-        {
+        changeIcon() {
             let value = this.getValue();
 
-            if (value == 0)
-            {
+            if (value == 0) {
                 this.setIcon('audio-volume-muted-symbolic');
             }
-            else if (value < 0.3)
-            {
+            else if (value < 0.3) {
                 this.setIcon('audio-volume-low-symbolic');
             }
-            else if (value < 0.7)
-            {
+            else if (value < 0.7) {
                 this.setIcon('audio-volume-medium-symbolic');
             }
-            else
-            {
+            else {
                 this.setIcon('audio-volume-high-symbolic');
             }
         }
@@ -158,10 +138,8 @@ var LabelWidget = GObject.registerClass(
     });
 
 var DenonAVRindicator = GObject.registerClass(
-    class DenonAVRindicator extends PanelMenu.Button
-    {
-        _init()
-        {
+    class DenonAVRindicator extends PanelMenu.Button {
+        _init() {
             super._init(0.0, IndicatorName);
 
             this.icon = new St.Icon({ icon_name: 'audio-speakers-symbolic', style_class: 'system-status-icon' });
@@ -180,78 +158,58 @@ var DenonAVRindicator = GObject.registerClass(
             this.volumeSlider.connect('notify::value', Lang.bind(this, this._changeVolume));
         }
 
-        _togglePowerButton(item, state)
-        {
-            if (state)
-            {
-                this._sendCommand('PutSystem_OnStandby', 'ON');
+        _togglePowerButton(item, state) {
+            if (state) {
+                sendCommand('PutSystem_OnStandby', 'ON');
             }
-            else
-            {
-                this._sendCommand('PutSystem_OnStandby', 'STANDBY');
+            else {
+                sendCommand('PutSystem_OnStandby', 'STANDBY');
             }
         }
 
-        _changeVolume()
-        {
+        _changeVolume() {
             let volume = this.volumeSlider.getVolume().toString();
 
-            this._sendCommand('PutMasterVolumeSet', volume);
+            sendCommand('PutMasterVolumeSet', volume);
 
             this.volumeLabel.setText(volume);
             this.volumeSlider.changeIcon();
         }
 
-        _sendCommand(command, arg)
-        {
-            let url = baseUrl + 'MainZone/index.put.asp?cmd0=' + command + '%2F' + arg;
-
-            // create an http message
-            let request = Soup.Message.new('GET', url);
-            // queue the http request
-            httpSession.queue_message(request, Lang.bind(this, function (httpSession, message) { }));
-        }
-
-        _updateStatus(menu, open)
-        {
-            if (open)
-            {
+        _updateStatus(menu, open) {
+            if (open) {
                 this.loadSettings();
 
                 let url = baseUrl + 'goform/formMainZone_MainZoneXml.xml';
                 let request = Soup.Message.new('GET', url);
-                httpSession.queue_message(request, Lang.bind(this, this._parseResponse));
+                httpSession.send_and_read_async(request, 0, null, Lang.bind(this, this._parseResponse));
             }
         }
 
-        _parseResponse(httpSession, message)
-        {
-            if (message.status_code == 200)
-            {
-                let data = message.response_body.data;
+        _parseResponse(session, result) {
+            let data = session.send_and_read_finish(result).get_data();
+            const decoder = new TextDecoder();
+            let text = decoder.decode(data);
 
-                let regexName = new RegExp('<FriendlyName><value>(.+)<\/value><\/FriendlyName>', 'g');
-                let regexPower = new RegExp('<ZonePower><value>([A-Z]+)<\/value><\/ZonePower>', 'g');
-                let regexVolume = new RegExp('<MasterVolume><value>(\-?[0-9.]+)<\/value><\/MasterVolume>', 'g');
+            let regexName = new RegExp('<FriendlyName><value>(.+)<\/value><\/FriendlyName>', 'g');
+            let regexPower = new RegExp('<ZonePower><value>([A-Z]+)<\/value><\/ZonePower>', 'g');
+            let regexVolume = new RegExp('<MasterVolume><value>(\-?[0-9.]+)<\/value><\/MasterVolume>', 'g');
 
-                let name = regexName.exec(data)[1];
-                let state = regexPower.exec(data)[1] == 'ON';
-                let volume = regexVolume.exec(data)[1];
+            let name = regexName.exec(text)[1];
+            let state = regexPower.exec(text)[1] == 'ON';
+            let volume = regexVolume.exec(text)[1];
 
-                this.powerButton.label.text = name;
-                this.powerButton.setToggleState(state);
-                this.volumeSlider.setVolume(volume);
-                this.volumeLabel.setText(this.volumeSlider.getVolume().toString());
-            }
+            this.powerButton.label.text = name;
+            this.powerButton.setToggleState(state);
+            this.volumeSlider.setVolume(volume);
+            this.volumeLabel.setText(this.volumeSlider.getVolume().toString());
         }
 
-        stop()
-        {
+        stop() {
             this.menu.removeAll();
         }
 
-        loadSettings()
-        {
+        loadSettings() {
             let gschema = Gio.SettingsSchemaSource.new_from_directory(Me.dir.get_child('schemas').get_path(),
                 Gio.SettingsSchemaSource.get_default(), false);
 
@@ -263,15 +221,22 @@ var DenonAVRindicator = GObject.registerClass(
         }
     });
 
-function enable()
-{
+function sendCommand(command, arg) {
+    let url = baseUrl + 'MainZone/index.put.asp?cmd0=' + command + '%2F' + arg;
+
+    // create an http message
+    let request = Soup.Message.new('GET', url);
+    // send the http request
+    httpSession.send_async(request, 0, null, null);
+}
+
+function enable() {
     denonAVRindicator = new DenonAVRindicator();
     denonAVRindicator.loadSettings();
     Main.panel.addToStatusArea(IndicatorName, denonAVRindicator);
 }
 
-function disable()
-{
+function disable() {
     denonAVRindicator.stop();
     denonAVRindicator.destroy();
 }
