@@ -16,7 +16,6 @@
  * with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-const Lang = imports.lang;
 const { Clutter, St, Soup, GObject, Gio } = imports.gi;
 const Main = imports.ui.main;
 const PanelMenu = imports.ui.panelMenu;
@@ -31,7 +30,7 @@ const Me = ExtensionUtils.getCurrentExtension();
 const IndicatorName = 'DenonAVRindicator';
 
 let denonAVRindicator;
-let httpSession = new Soup.Session();
+let httpSession;
 
 let baseUrl;
 
@@ -129,7 +128,7 @@ var InputMenuItem = GObject.registerClass(
 
             this.actor.add(this.box);
 
-            this.connect('activate', Lang.bind(this, this._click));
+            this.connect('activate', () => { this._click(); });
         }
 
         _click() {
@@ -154,10 +153,10 @@ var DenonAVRindicator = GObject.registerClass(
             this.inputSubMenu = new PopupMenu.PopupSubMenuMenuItem("", true);
             this.menu.addMenuItem(this.inputSubMenu);
 
-            this.menu.connect('open-state-changed', Lang.bind(this, this._updateStatus));
+            this.menu.connect('open-state-changed', (menu, open) => { this._updateStatus(menu, open); });
 
-            this.powerButton.connect('toggled', Lang.bind(this, this._togglePowerButton));
-            this.volumeSlider.connect('notify::value', Lang.bind(this, this._changeVolume));
+            this.powerButton.connect('toggled', (item, state) => { this._togglePowerButton(item, state); });
+            this.volumeSlider.connect('notify::value', () => { this._changeVolume(); });
         }
 
         _togglePowerButton(item, state) {
@@ -183,7 +182,7 @@ var DenonAVRindicator = GObject.registerClass(
 
                 let url = baseUrl + 'goform/formMainZone_MainZoneXml.xml';
                 let request = Soup.Message.new('GET', url);
-                httpSession.send_and_read_async(request, 0, null, Lang.bind(this, this._parseResponse));
+                httpSession.send_and_read_async(request, 0, null, (session, result) => { this._parseResponse(session, result); });
             }
         }
 
@@ -241,13 +240,7 @@ var DenonAVRindicator = GObject.registerClass(
         }
 
         loadSettings() {
-            let gschema = Gio.SettingsSchemaSource.new_from_directory(Me.dir.get_child('schemas').get_path(),
-                Gio.SettingsSchemaSource.get_default(), false);
-
-            this.settings = new Gio.Settings({
-                settings_schema: gschema.lookup('org.gnome.shell.extensions.denon-avr-controler', true)
-            });
-
+            this.settings = ExtensionUtils.getSettings("org.gnome.shell.extensions.denon-avr-controler");
             baseUrl = this.settings.get_value('avr-url').unpack();
         }
     });
@@ -262,12 +255,21 @@ function sendCommand(command, arg) {
 }
 
 function enable() {
+    httpSession = new Soup.Session();
     denonAVRindicator = new DenonAVRindicator();
     denonAVRindicator.loadSettings();
     Main.panel.addToStatusArea(IndicatorName, denonAVRindicator);
 }
 
 function disable() {
-    denonAVRindicator.stop();
-    denonAVRindicator.destroy();
+    if (denonAVRindicator) {
+        denonAVRindicator.stop();
+        denonAVRindicator.destroy();
+        denonAVRindicator = null;
+    }
+
+    if (httpSession) {
+        httpSession.abort();
+        httpSession = null;
+    }
 }
