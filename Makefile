@@ -12,6 +12,7 @@ clean:
 
 gschemas: $(SRCDIR)/schemas/*
 	mkdir -p $(BUILDDIR)/schemas
+	cp $(SRCDIR)/schemas/* $(BUILDDIR)/schemas/
 	$(GSC) $(SRCDIR)/schemas
 
 resources: $(RESOURCES)
