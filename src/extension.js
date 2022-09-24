@@ -109,31 +109,31 @@ var VolumeSlider = GObject.registerClass(
         }
     });
 
-/**
- * A simple label which only displays the given text.
- *
- * @type {Lang.Class}
- */
-var LabelWidget = GObject.registerClass(
-    class LabelWidget extends PopupMenu.PopupBaseMenuItem
-    {
-        _init(text)
-        {
-            super._init({ reactive: false });
+var InputMenuItem = GObject.registerClass(
+    class InputMenuItem extends PopupMenu.PopupBaseMenuItem {
+        _init(name, value, selected) {
+            super._init();
+            this._text = name;
+            this._value = value;
 
-            this._label = new St.Label({ text: text });
+            this.box = new St.BoxLayout({ style_class: 'popup-combobox-item' });
+            if (selected) {
+                this.icon = new St.Icon({ icon_name: 'radio-checked-symbolic', style_class: 'popup-menu-icon' });
+            }
+            else {
+                this.icon = new St.Icon({ icon_name: 'radio-symbolic', style_class: 'popup-menu-icon' });
+            }
+            this.box.add(this.icon);
+            this.label = new St.Label({ text: " " + name });
+            this.box.add(this.label);
 
-            this.actor.add_child(this._label);
+            this.actor.add(this.box);
+
+            this.connect('activate', Lang.bind(this, this._click));
         }
 
-        /**
-         * Set the text for this label.
-         *
-         * @param text the new text.
-         */
-        setText(text)
-        {
-            this._label.text = text;
+        _click() {
+            sendCommand('PutZone_InputFunction', this._value.replace(' ', '%20'));
         }
     });
 
@@ -146,12 +146,14 @@ var DenonAVRindicator = GObject.registerClass(
             this.actor.add_child(this.icon);
 
             this.powerButton = new PopupMenu.PopupSwitchMenuItem('AVR', false);
-            this.volumeSlider = new VolumeSlider(-33);
-            this.volumeLabel = new LabelWidget(this.volumeSlider.getVolume().toString());
-
             this.menu.addMenuItem(this.powerButton);
+
+            this.volumeSlider = new VolumeSlider(-33);
             this.menu.addMenuItem(this.volumeSlider);
-            this.menu.addMenuItem(this.volumeLabel);
+
+            this.inputSubMenu = new PopupMenu.PopupSubMenuMenuItem("", true);
+            this.menu.addMenuItem(this.inputSubMenu);
+
             this.menu.connect('open-state-changed', Lang.bind(this, this._updateStatus));
 
             this.powerButton.connect('toggled', Lang.bind(this, this._togglePowerButton));
@@ -172,7 +174,6 @@ var DenonAVRindicator = GObject.registerClass(
 
             sendCommand('PutMasterVolumeSet', volume);
 
-            this.volumeLabel.setText(volume);
             this.volumeSlider.changeIcon();
         }
 
@@ -194,15 +195,45 @@ var DenonAVRindicator = GObject.registerClass(
             let regexName = new RegExp('<FriendlyName><value>(.+)<\/value><\/FriendlyName>', 'g');
             let regexPower = new RegExp('<ZonePower><value>([A-Z]+)<\/value><\/ZonePower>', 'g');
             let regexVolume = new RegExp('<MasterVolume><value>(\-?[0-9.]+)<\/value><\/MasterVolume>', 'g');
+            let regexInput = new RegExp('<InputFuncSelect><value>(.+)<\/value><\/InputFuncSelect>', 'g');
 
             let name = regexName.exec(text)[1];
             let state = regexPower.exec(text)[1] == 'ON';
             let volume = regexVolume.exec(text)[1];
+            let input = regexInput.exec(text)[1];
 
             this.powerButton.label.text = name;
             this.powerButton.setToggleState(state);
             this.volumeSlider.setVolume(volume);
-            this.volumeLabel.setText(this.volumeSlider.getVolume().toString());
+            this.inputSubMenu.label.text = input;
+
+            // called here because it needs this.inputSubMenu.label.text to be set
+            this._getInputFuncList();
+        }
+
+        _getInputFuncList() {
+            // values seems impossible to retrive from the AVR, so this list is hardcoded
+            let inputs = [
+                { name: "CBL/SAT", value: "SAT/CBL" },
+                { name: "DVD", value: "DVD" },
+                { name: "Blu-ray", value: "BD" },
+                { name: "GAME", value: "GAME" },
+                { name: "AUX", value: "AUX1" },
+                { name: "Media Player", value: "MPLAY" },
+                { name: "iPod/USB", value: "USB/IPOD" },
+                { name: "TUNER", value: "TUNER" },
+                { name: "NETWORK", value: "NET" },
+                { name: "TV AUDIO", value: "TV" },
+                { name: "Bluetooth", value: "BT" },
+                { name: "Internet Radio", value: "IRADIO" },
+            ];
+
+            this.inputSubMenu.menu.removeAll();
+            for (let i in inputs) {
+                let input = inputs[i];
+                let menuItem = new InputMenuItem(input.name, input.value, input.name == this.inputSubMenu.label.text)
+                this.inputSubMenu.menu.addMenuItem(menuItem);
+            }
         }
 
         stop() {
