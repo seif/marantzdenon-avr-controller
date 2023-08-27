@@ -2,10 +2,11 @@
     "uuid": "Denon_AVR_controler@sylter.fr",
     "name": "Denon AVR controler",
     "description": "Denon AVR controler",
-    "version": 6,
+    "version": 7,
     "shell-version": [
         "42",
-        "43"
+        "43",
+        "44"
     ],
     "url": "https://framagit.org/sylter/denon-avr-controler"
 }
