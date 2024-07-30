@@ -18,33 +18,30 @@
 
 'use strict';
 
-const GLib = imports.gi.GLib;
-const Gtk = imports.gi.Gtk;
-const Gio = imports.gi.Gio;
-const ExtensionUtils = imports.misc.extensionUtils;
-const Me = ExtensionUtils.getCurrentExtension();
+import Gio from "gi://Gio";
+import Adw from "gi://Adw";
+import { ExtensionPreferences, gettext as _ } from "resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js";
 
-function buildPrefsWidget() {
-    let gschema = Gio.SettingsSchemaSource.new_from_directory(Me.dir.get_child('schemas').get_path(),
-        Gio.SettingsSchemaSource.get_default(), false);
+export default class DenonAVRControlerExtensionPreferences extends ExtensionPreferences
+{
+    fillPreferencesWindow(window)
+    {
+        const page = new Adw.PreferencesPage({
+            title: _('Preferences'),
+            icon_name: 'preferences-system-symbolic',
+        });
+        window.add(page);
 
-    this.settings = new Gio.Settings({
-        settings_schema: gschema.lookup('org.gnome.shell.extensions.denon-avr-controler', true)
-    });
+        const group = new Adw.PreferencesGroup({});
+        page.add(group);
 
-    let buildable = new Gtk.Builder();
-    buildable.add_objects_from_file(Me.dir.get_path() + '/Settings.ui', ['prefs_widget']);
+        const row = new Adw.EntryRow({
+            title: _('URL'),
+        });
+        group.add(row);
 
-    let grid = buildable.get_object('prefs_widget');
-    let entry = buildable.get_object('gtkEntryUrl');
-    entry.set_text(this.settings.get_value('avr-url').unpack());
-    entry.connect('changed', () => {
-        this.settings.set_value('avr-url', new GLib.Variant('s', entry.get_text()));
-    });
-
-    return grid;
+        window._settings = this.getSettings();
+        window._settings.bind('avr-url', row, 'text', Gio.SettingsBindFlags.DEFAULT);
+    }
 }
 
-function init() {
-    // nothing to do, but this function have to exist
-}

@@ -2,7 +2,7 @@ SRCDIR = ./src
 UUID = $(shell grep uuid $(SRCDIR)/metadata.json | cut -d '"' -f 4)
 BUILDDIR = ./target/$(UUID)
 GSC = glib-compile-schemas --targetdir=$(BUILDDIR)/schemas
-RESOURCES = $(SRCDIR)/metadata.json $(SRCDIR)/Settings.ui $(SRCDIR)/stylesheet.css
+RESOURCES = $(SRCDIR)/metadata.json
 
 all: zip
 
@@ -28,10 +28,10 @@ zip: gschemas resources sources
 
 install: zip
 	mkdir -p ~/.local/share/gnome-shell/extensions/
-	unzip -q $(UUID).zip -d ~/.local/share/gnome-shell/extensions/$(UUID)
+	unzip -oq $(UUID).zip -d ~/.local/share/gnome-shell/extensions/$(UUID)
 
 uninstall: 
 	rm -rf ~/.local/share/gnome-shell/extensions/$(UUID)
 
-test:
-	env MUTTER_DEBUG_DUMMY_MODE_SPECS=1920x1080 dbus-run-session -- gnome-shell --nested
+test: install
+	env MUTTER_DEBUG_DUMMY_MODE_SPECS=1680x1050 dbus-run-session -- gnome-shell --nested
