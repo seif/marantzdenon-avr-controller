@@ -39,7 +39,7 @@ class SliderItem extends PopupMenu.PopupImageMenuItem
     {
         super._init('', icon, params);
         this.slider = new Slider.Slider(value);
-        this.actor.add_child(this.slider);
+        this.add_child(this.slider);
     }
 
     setValue(value)
@@ -146,7 +146,7 @@ class InputMenuItem extends PopupMenu.PopupBaseMenuItem
         this.label = new St.Label({ text: " " + name });
         this.box.add_child(this.label);
 
-        this.actor.add_child(this.box);
+        this.add_child(this.box);
 
         this.connect('activate', () => { this._click(); });
     }
@@ -166,7 +166,7 @@ class DenonAVRindicator extends PanelMenu.Button
         this.extension = extension;
 
         this.icon = new St.Icon({ icon_name: 'audio-speakers-symbolic', style_class: 'system-status-icon' });
-        this.actor.add_child(this.icon);
+        this.add_child(this.icon);
 
         this.powerButton = new PopupMenu.PopupSwitchMenuItem('AVR', false);
         this.menu.addMenuItem(this.powerButton);
