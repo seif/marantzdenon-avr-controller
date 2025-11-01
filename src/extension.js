@@ -21,6 +21,7 @@ import St from 'gi://St';
 import Soup from 'gi://Soup';
 import GObject from "gi://GObject";
 import Gio from "gi://Gio";
+import GLib from "gi://GLib";
 
 import {Extension, gettext as _} from 'resource:///org/gnome/shell/extensions/extension.js';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js'
@@ -31,6 +32,127 @@ import * as Slider from 'resource:///org/gnome/shell/ui/slider.js'
 const IndicatorName = 'DenonAVRindicator';
 
 let baseUrl;
+
+class DenonAPIAdapter {
+    constructor(baseUrl, httpSession) {
+        this.baseUrl = baseUrl;
+        this.httpSession = httpSession;
+    }
+
+    async getStatus() {
+        throw new Error('getStatus must be implemented');
+    }
+
+    runCommand(command, arg) {
+        throw new Error('runCommand must be implemented');
+    }
+
+    parseStatusResponse(text) {
+        throw new Error('parseStatusResponse must be implemented');
+    }
+}
+
+// Old Denon API (pre-2016)
+class OldDenonAPI extends DenonAPIAdapter {
+    async getStatus() {
+        let url = this.baseUrl + 'goform/formMainZone_MainZoneXml.xml';
+        let request = Soup.Message.new('GET', url);
+
+        let data = await this.httpSession.send_and_read_async(request, 0, null);
+        const decoder = new TextDecoder();
+        let text = decoder.decode(data.get_data());
+        return this.parseStatusResponse(text);
+    }
+
+    runCommand(command, arg) {
+        let url = this.baseUrl + 'MainZone/index.put.asp?cmd0=' + command + '%2F' + arg;
+
+        let request = Soup.Message.new('GET', url);
+        this.httpSession.send_async(request, 0, null, null);
+    }
+
+    parseStatusResponse(text) {
+        let regexName = new RegExp('<FriendlyName><value>(.+)<\/value><\/FriendlyName>', 'g');
+        let regexPower = new RegExp('<ZonePower><value>([A-Z]+)<\/value><\/ZonePower>', 'g');
+        let regexVolume = new RegExp('<MasterVolume><value>(\-?[0-9.]+)<\/value><\/MasterVolume>', 'g');
+        let regexInput = new RegExp('<InputFuncSelect><value>(.+)<\/value><\/InputFuncSelect>', 'g');
+
+        let nameMatch = regexName.exec(text);
+        let powerMatch = regexPower.exec(text);
+        let volumeMatch = regexVolume.exec(text);
+        let inputMatch = regexInput.exec(text);
+
+        if (!nameMatch || !powerMatch || !volumeMatch || !inputMatch) {
+            return null;
+        }
+
+        return {
+            name: nameMatch[1],
+            power: powerMatch[1] == 'ON',
+            volume: volumeMatch[1],
+            input: inputMatch[1]
+        };
+    }
+}
+
+// New Denon API (post-2016)
+class NewDenonAPI extends DenonAPIAdapter {
+    async getStatus() {
+        let url = this.baseUrl + 'goform/AppCommand.xml';
+        let request = Soup.Message.new('POST', url);
+
+        let xmlBody = '<?xml version="1.0" encoding="utf-8"?>\n' +
+                      '<tx>\n' +
+                      '  <cmd id="1">GetZoneName</cmd>\n' +
+                      '  <cmd id="1">GetAllZonePowerStatus</cmd>\n' +
+                      '  <cmd id="1">GetAllZoneSource</cmd>\n' +
+                      '  <cmd id="1">GetAllZoneVolume</cmd>\n' +
+                      '  <cmd id="1">GetAllZoneMuteStatus</cmd>\n' +
+                      '</tx>';
+
+        request.set_request_body_from_bytes('text/xml', new GLib.Bytes(xmlBody));
+
+        let data = await this.httpSession.send_and_read_async(request, 0, null);
+        const decoder = new TextDecoder();
+        let text = decoder.decode(data.get_data());
+        return this.parseStatusResponse(text);
+    }
+
+    runCommand(command, arg) {
+        let commandMap = {
+            'PutSystem_OnStandby': (value) => 'PW' + value,
+            'PutMasterVolumeSet': (value) => {
+                // The volume is based on api which has min of -80, convert
+                let newApiVolume = Math.round(parseFloat(value) + 80);
+                return 'MV' + newApiVolume;
+            },
+            'PutZone_InputFunction': (value) => 'SI' + value
+        };
+
+        let denonCommand = commandMap[command] ? commandMap[command](arg) : command + arg;
+        let url = this.baseUrl + 'goform/formiPhoneAppDirect.xml?' + denonCommand;
+
+        let request = Soup.Message.new('GET', url);
+        this.httpSession.send_async(request, 0, null, null);
+    }
+
+    parseStatusResponse(text) {
+        let nameMatch = text.match(/<cmd>[\s\S]*?<zone1>([^<]+)<\/zone1>/);
+        let powerMatches = text.match(/<cmd>[\s\S]*?<zone1>([^<]+)<\/zone1>[\s\S]*?<\/cmd>[\s\S]*?<cmd>[\s\S]*?<zone1>([^<]+)<\/zone1>/);
+        let powerStatus = powerMatches ? powerMatches[2] : 'OFF';
+
+        let sourceMatch = text.match(/<cmd>[\s\S]*?<zone1>[\s\S]*?<source>([^<]+)<\/source>/);
+
+        let volumeMatch = text.match(/<cmd>[\s\S]*?<zone1>[\s\S]*?<volume>([^<]+)<\/volume>/);
+
+        return {
+            name: nameMatch[1].trim(),
+            power: powerStatus.toUpperCase() === 'ON',
+            volume: parseFloat(volumeMatch[1]),
+            input: sourceMatch ? sourceMatch[1] : 'UNKNOWN'
+        };
+    }
+}
 
 const SliderItem = GObject.registerClass(
 class SliderItem extends PopupMenu.PopupImageMenuItem
@@ -210,35 +332,16 @@ class DenonAVRindicator extends PanelMenu.Button
         {
             this.loadSettings();
 
-            let url = baseUrl + 'goform/formMainZone_MainZoneXml.xml';
-            let request = Soup.Message.new('GET', url);
-            this.extension.httpSession.send_and_read_async(request, 0, null, (session, result) => { this._parseResponse(session, result); });
+            this.extension.api.getStatus().then(status => {
+                this.powerButton.label.text = status.name;
+                this.powerButton.setToggleState(status.power);
+                this.volumeSlider.setVolume(status.volume);
+                this.inputSubMenu.label.text = status.input;
+
+                // called here because it needs this.inputSubMenu.label.text to be set
+                this._getInputFuncList();
+            });
         }
-    }
-
-    _parseResponse(session, result)
-    {
-        let data = session.send_and_read_finish(result).get_data();
-        const decoder = new TextDecoder();
-        let text = decoder.decode(data);
-
-        let regexName = new RegExp('<FriendlyName><value>(.+)<\/value><\/FriendlyName>', 'g');
-        let regexPower = new RegExp('<ZonePower><value>([A-Z]+)<\/value><\/ZonePower>', 'g');
-        let regexVolume = new RegExp('<MasterVolume><value>(\-?[0-9.]+)<\/value><\/MasterVolume>', 'g');
-        let regexInput = new RegExp('<InputFuncSelect><value>(.+)<\/value><\/InputFuncSelect>', 'g');
-
-        let name = regexName.exec(text)[1];
-        let state = regexPower.exec(text)[1] == 'ON';
-        let volume = regexVolume.exec(text)[1];
-        let input = regexInput.exec(text)[1];
-
-        this.powerButton.label.text = name;
-        this.powerButton.setToggleState(state);
-        this.volumeSlider.setVolume(volume);
-        this.inputSubMenu.label.text = input;
-
-        // called here because it needs this.inputSubMenu.label.text to be set
-        this._getInputFuncList();
     }
 
     _getInputFuncList()
@@ -286,6 +389,7 @@ export default class DenonAVRControlerExtension extends Extension
         this.httpSession = new Soup.Session();
         this._indicator = new DenonAVRindicator(this);
         this._indicator.loadSettings();
+        this._initializeAPI();
         Main.panel.addToStatusArea(IndicatorName, this._indicator);
     }
 
@@ -297,15 +401,23 @@ export default class DenonAVRControlerExtension extends Extension
 
         this.httpSession?.abort();
         this.httpSession = null;
+        this.api = null;
+    }
+
+    _initializeAPI()
+    {
+        let settings = this.getSettings("org.gnome.shell.extensions.denon-avr-controler");
+        let apiType = settings.get_value('api-type')?.unpack() || 'old';
+
+        if (apiType === 'new') {
+            this.api = new NewDenonAPI(baseUrl, this.httpSession);
+        } else {
+            this.api = new OldDenonAPI(baseUrl, this.httpSession);
+        }
     }
 
     sendCommand(command, arg)
     {
-        let url = baseUrl + 'MainZone/index.put.asp?cmd0=' + command + '%2F' + arg;
-
-        // create an http message
-        let request = Soup.Message.new('GET', url);
-        // send the http request
-        this.httpSession.send_async(request, 0, null, null);
+        this.api.runCommand(command, arg);
     }
 }

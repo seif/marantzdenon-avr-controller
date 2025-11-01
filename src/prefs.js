@@ -20,6 +20,7 @@
 
 import Gio from "gi://Gio";
 import Adw from "gi://Adw";
+import Gtk from "gi://Gtk";
 import { ExtensionPreferences, gettext as _ } from "resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js";
 
 export default class DenonAVRControlerExtensionPreferences extends ExtensionPreferences
@@ -38,10 +39,26 @@ export default class DenonAVRControlerExtensionPreferences extends ExtensionPref
         const row = new Adw.EntryRow({
             title: _('URL'),
         });
+
         group.add(row);
+
+        const apiTypeRow = new Adw.ComboRow({
+            title: _('API type'),
+            model: new Gtk.StringList({ strings: ['new', 'old'] }),
+        });
+        group.add(apiTypeRow);
 
         window._settings = this.getSettings();
         window._settings.bind('avr-url', row, 'text', Gio.SettingsBindFlags.DEFAULT);
+
+        // Bind API type to ComboRow
+        const apiType = window._settings.get_string('api-type');
+        apiTypeRow.selected = apiType === 'old' ? 1 : 0;
+
+        apiTypeRow.connect('notify::selected', () => {
+            const selected = apiTypeRow.selected === 1 ? 'old' : 'new';
+            window._settings.set_string('api-type', selected);
+        }); 
     }
 }
 
