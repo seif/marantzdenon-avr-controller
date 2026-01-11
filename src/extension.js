@@ -29,7 +29,7 @@ import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js'
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js'
 import * as Slider from 'resource:///org/gnome/shell/ui/slider.js'
 
-const IndicatorName = 'DenonAVRindicator';
+const IndicatorName = 'MarantzDenonAVRindicator';
 
 let baseUrl;
 
@@ -377,7 +377,7 @@ class DenonAVRindicator extends PanelMenu.Button
 
     loadSettings()
     {
-        this.settings = this.extension.getSettings("org.gnome.shell.extensions.denon-avr-controller");
+        this.settings = this.extension.getSettings("org.gnome.shell.extensions.marantzdenon-avr-controller");
         baseUrl = this.settings.get_value('avr-url').unpack();
     }
 });
@@ -406,7 +406,7 @@ export default class DenonAVRControllerExtension extends Extension
 
     _initializeAPI()
     {
-        let settings = this.getSettings("org.gnome.shell.extensions.denon-avr-controller");
+        let settings = this.getSettings("org.gnome.shell.extensions.marantzdenon-avr-controller");
         let apiType = settings.get_value('api-type')?.unpack() || 'old';
 
         if (apiType === 'new') {
