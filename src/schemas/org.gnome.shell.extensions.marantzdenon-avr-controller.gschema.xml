@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+  <schema id="org.gnome.shell.extensions.marantzdenon-avr-controller" path="/org/gnome/shell/extensions/marantzdenon-avr-controller/">
+    <key name="avr-url" type="s">
+      <default>"http://[AVR's hostname]/"</default>
+    </key>
+    <key name="api-type" type="s">
+      <default>"old"</default>
+      <summary>API Type</summary>
+      <description>Enter "old" for pre-2016 Denon AVRs or "new" for post-2016 models</description>
+    </key>
+  </schema>
+</schemalist>

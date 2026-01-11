@@ -6,5 +6,5 @@ build:
     script: make
     artifacts:
         paths: 
-            - Denon_AVR_controler@sylter.fr.zip
+            - MarantzDenon_AVR_controller@seifattar.net.zip
         expire_in: 1 day

@@ -1,11 +1,11 @@
 {
-    "uuid": "Denon_AVR_controler@sylter.fr",
-    "name": "Denon AVR controler",
-    "description": "Denon AVR controler",
-    "version": 12,
+    "uuid": "MarantzDenon_AVR_controller@seifattar.net",
+    "name": "Marantz and Denon AVR controller",
+    "description": "Control your Marantz or Denon AVR from GNOME Shell",
+    "version": 1,
     "shell-version": [
-        "48", "49"
+        "46", "47", "48", "49"
     ],
-    "settings-schema": "org.gnome.shell.extensions.denon-avr-controler",
-    "url": "https://framagit.org/sylter/denon-avr-controler"
+    "settings-schema": "org.gnome.shell.extensions.marantzdenon-avr-controller",
+    "url": "https://github.com/seif/marantzdenon-avr-controller"
 }
