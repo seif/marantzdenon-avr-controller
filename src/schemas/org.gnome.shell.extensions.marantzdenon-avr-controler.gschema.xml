@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <schemalist>
-  <schema id="org.gnome.shell.extensions.denon-avr-controler" path="/org/gnome/shell/extensions/denon-avr-controler/">
+  <schema id="org.gnome.shell.extensions.marantzdenon-avr-controller" path="/org/gnome/shell/extensions/marantzdenon-avr-controller/">
     <key name="avr-url" type="s">
       <default>"http://[AVR's hostname]/"</default>
     </key>

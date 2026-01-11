@@ -2,12 +2,12 @@
  * extension.js
  * Copyright (C) 2019 Sylvain Terrien <sylvainterrien@orange.fr>
  *
- * Denon AVR controler is free software: you can redistribute it and/or modify it
+ * Denon AVR controller is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
  * Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * Denon AVR controler is distributed in the hope that it will be useful, but
+ * Denon AVR controller is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU General Public License for more details.
@@ -377,12 +377,12 @@ class DenonAVRindicator extends PanelMenu.Button
 
     loadSettings()
     {
-        this.settings = this.extension.getSettings("org.gnome.shell.extensions.denon-avr-controler");
+        this.settings = this.extension.getSettings("org.gnome.shell.extensions.denon-avr-controller");
         baseUrl = this.settings.get_value('avr-url').unpack();
     }
 });
 
-export default class DenonAVRControlerExtension extends Extension
+export default class DenonAVRControllerExtension extends Extension
 {
     enable()
     {
@@ -406,7 +406,7 @@ export default class DenonAVRControlerExtension extends Extension
 
     _initializeAPI()
     {
-        let settings = this.getSettings("org.gnome.shell.extensions.denon-avr-controler");
+        let settings = this.getSettings("org.gnome.shell.extensions.denon-avr-controller");
         let apiType = settings.get_value('api-type')?.unpack() || 'old';
 
         if (apiType === 'new') {
