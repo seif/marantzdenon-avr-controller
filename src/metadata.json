@@ -1,7 +1,7 @@
 {
     "uuid": "MarantzDenon_AVR_controller@seifattar.net",
     "name": "Marantz and Denon AVR controller",
-    "description": "Control your Marantz or Denon AVR from GNOME Shell",
+    "description": "Control your Marantz or Denon AVR from GNOME Shell.\n> This extension is not affiliated, funded, or in any way associated with Marantz and Denon.\nThis is a fork of the extension [Denon AVR Controller](https://extensions.gnome.org/extension/2371/denon-avr-controler/) with added support for newer Denon and Marantz API.\n Afrer installation go to the extension settings and set the url for your device (e.g. http://denon.local:8080). Your device could be using one of 2 apis, you can switch in the extension settings between the old and new API, if one doesn't work try the other. Leave a comment on th eextensions page with your device model and what API you used.\n\n Tested with Denon AVR-1912.",
     "version": 1,
     "shell-version": [
         "46", "47", "48", "49"
