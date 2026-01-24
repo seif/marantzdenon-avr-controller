@@ -12,9 +12,11 @@ clean:
 	rm $(UUID)-v*.zip
 
 resources: $(RESOURCES)
+	mkdir -p $(BUILDDIR)/
 	cp -f $(RESOURCES) $(BUILDDIR)/
 
 sources: $(SRCDIR)/*.js
+	mkdir -p $(BUILDDIR)/
 	cp -f $(SRCDIR)/*.js $(BUILDDIR)/
 
 zip: resources sources
