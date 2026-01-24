@@ -406,7 +406,7 @@ export default class DenonAVRControllerExtension extends Extension
 
     _initializeAPI()
     {
-        let settings = this.getSettings("org.gnome.shell.extensions.marantzdenon-avr-controller");
+        let settings = this.getSettings();
         let apiType = settings.get_value('api-type')?.unpack() || 'old';
 
         if (apiType === 'new') {
