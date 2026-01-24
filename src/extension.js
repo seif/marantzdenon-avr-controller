@@ -366,9 +366,10 @@ class DenonAVRindicator extends PanelMenu.Button
         }
     }
 
-    stop()
+    destroy()
     {
         this.menu.removeAll();
+        super.destroy();
     }
 });
 
