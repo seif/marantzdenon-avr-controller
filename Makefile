@@ -2,7 +2,6 @@ SRCDIR = ./src
 UUID = $(shell grep uuid $(SRCDIR)/metadata.json | cut -d '"' -f 4)
 VERSION = $(shell grep \"version\" $(SRCDIR)/metadata.json | grep -oP '\d+')
 BUILDDIR = ./target/$(UUID)
-GSC = glib-compile-schemas --targetdir=$(BUILDDIR)/schemas
 RESOURCES = $(SRCDIR)/metadata.json
 
 all: zip
@@ -10,6 +9,10 @@ all: zip
 clean:
 	rm -rf ./target
 	rm $(UUID)-v*.zip
+
+gschemas: $(SRCDIR)/schemas/*
+	mkdir -p $(BUILDDIR)/schemas
+	cp $(SRCDIR)/schemas/* $(BUILDDIR)/schemas/
 
 resources: $(RESOURCES)
 	mkdir -p $(BUILDDIR)/
@@ -19,7 +22,7 @@ sources: $(SRCDIR)/*.js
 	mkdir -p $(BUILDDIR)/
 	cp -f $(SRCDIR)/*.js $(BUILDDIR)/
 
-zip: resources sources
+zip: gschemas resources sources
 	cd $(BUILDDIR) ; \
 	zip -qr "$(UUID)-v$(VERSION).zip" .
 	mv $(BUILDDIR)/$(UUID)-v$(VERSION).zip .
