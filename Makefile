@@ -11,18 +11,13 @@ clean:
 	rm -rf ./target
 	rm $(UUID)-v*.zip
 
-gschemas: $(SRCDIR)/schemas/*
-	mkdir -p $(BUILDDIR)/schemas
-	cp $(SRCDIR)/schemas/* $(BUILDDIR)/schemas/
-	$(GSC) $(SRCDIR)/schemas
-
 resources: $(RESOURCES)
 	cp -f $(RESOURCES) $(BUILDDIR)/
 
 sources: $(SRCDIR)/*.js
 	cp -f $(SRCDIR)/*.js $(BUILDDIR)/
 
-zip: gschemas resources sources
+zip: resources sources
 	cd $(BUILDDIR) ; \
 	zip -qr "$(UUID)-v$(VERSION).zip" .
 	mv $(BUILDDIR)/$(UUID)-v$(VERSION).zip .
