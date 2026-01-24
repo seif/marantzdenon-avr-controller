@@ -31,8 +31,6 @@ import * as Slider from 'resource:///org/gnome/shell/ui/slider.js'
 
 const IndicatorName = 'MarantzDenonAVRindicator';
 
-let baseUrl;
-
 class DenonAPIAdapter {
     constructor(baseUrl, httpSession) {
         this.baseUrl = baseUrl;
@@ -330,8 +328,6 @@ class DenonAVRindicator extends PanelMenu.Button
     {
         if (open)
         {
-            this.loadSettings();
-
             this.extension.api.getStatus().then(status => {
                 this.powerButton.label.text = status.name;
                 this.powerButton.setToggleState(status.power);
@@ -374,12 +370,6 @@ class DenonAVRindicator extends PanelMenu.Button
     {
         this.menu.removeAll();
     }
-
-    loadSettings()
-    {
-        this.settings = this.extension.getSettings("org.gnome.shell.extensions.marantzdenon-avr-controller");
-        baseUrl = this.settings.get_value('avr-url').unpack();
-    }
 });
 
 export default class DenonAVRControllerExtension extends Extension
@@ -388,7 +378,6 @@ export default class DenonAVRControllerExtension extends Extension
     {
         this.httpSession = new Soup.Session();
         this._indicator = new DenonAVRindicator(this);
-        this._indicator.loadSettings();
         this._initializeAPI();
         Main.panel.addToStatusArea(IndicatorName, this._indicator);
     }
@@ -408,6 +397,7 @@ export default class DenonAVRControllerExtension extends Extension
     {
         let settings = this.getSettings();
         let apiType = settings.get_value('api-type')?.unpack() || 'old';
+        let baseUrl = settings.get_value('avr-url').unpack();  
 
         if (apiType === 'new') {
             this.api = new NewDenonAPI(baseUrl, this.httpSession);
