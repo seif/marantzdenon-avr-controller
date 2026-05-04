@@ -284,6 +284,7 @@ class DenonAVRindicator extends PanelMenu.Button
     {
         super._init(0.0, IndicatorName);
         this.extension = extension;
+        this._menuOpenStateChangedId = 0;
 
         this.icon = new St.Icon({ icon_name: 'audio-speakers-symbolic', style_class: 'system-status-icon' });
         this.add_child(this.icon);
@@ -297,7 +298,7 @@ class DenonAVRindicator extends PanelMenu.Button
         this.inputSubMenu = new PopupMenu.PopupSubMenuMenuItem("", true);
         this.menu.addMenuItem(this.inputSubMenu);
 
-        this.menu.connect('open-state-changed', (menu, open) => { this._updateStatus(menu, open); });
+        this._menuOpenStateChangedId = this.menu.connect('open-state-changed', (menu, open) => { this._updateStatus(menu, open); });
 
         this.powerButton.connect('toggled', (item, state) => { this._togglePowerButton(item, state); });
         this.volumeSlider.connect('notify::value', () => { this._changeVolume(); });
@@ -368,6 +369,12 @@ class DenonAVRindicator extends PanelMenu.Button
 
     destroy()
     {
+        if (this._menuOpenStateChangedId)
+        {
+            this.menu.disconnect(this._menuOpenStateChangedId);
+            this._menuOpenStateChangedId = 0;
+        }
+
         this.menu.removeAll();
         super.destroy();
     }
