@@ -30,6 +30,7 @@ zip: gschemas resources sources
 install: zip
 	mkdir -p ~/.local/share/gnome-shell/extensions/
 	unzip -oq $(UUID)-v$(VERSION).zip -d ~/.local/share/gnome-shell/extensions/$(UUID)
+	glib-compile-schemas ~/.local/share/gnome-shell/extensions/$(UUID)/schemas
 
 uninstall: 
 	rm -rf ~/.local/share/gnome-shell/extensions/$(UUID)
