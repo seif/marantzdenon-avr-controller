@@ -392,7 +392,6 @@ export default class DenonAVRControllerExtension extends Extension
 
     disable()
     {
-        this._indicator?.stop();
         this._indicator?.destroy();
         this._indicator = null;
 
